@@ -9,7 +9,7 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Read the ABI file
-const abiFilePath = path.join(__dirname, 'abi', 'contract_abi.json');
+const abiFilePath = path.join(__dirname, 'build', 'contract-abi.json');
 const abiData = JSON.parse(fs.readFileSync(abiFilePath, 'utf8'));
 
 const generateHtml = (abi) => {
