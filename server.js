@@ -1,40 +1,71 @@
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
+const http = require('http');
+
+const app = express();
+
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Read the ABI file
 const abiFilePath = path.join(__dirname, 'abi', 'contract_abi.json');
 const abiData = JSON.parse(fs.readFileSync(abiFilePath, 'utf8'));
 
-// Generate the HTML dynamically
 const generateHtml = (abi) => {
-  // Implement the same logic as in the AccountForm component
-  // to generate the HTML based on the ABI
-  let html = '<html><body>';
-  html += '<h1>Contract Functions</h1>';
-  html += '<ul>';
+  let html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Contract Functions</title>
+      <link rel="stylesheet" href="css/styles.css">
+      <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    </head>
+    <body>
+      <form id="contractFunctionsForm">
+        <h2>Contract Functions</h2>
+  `;
+
   abi.body.functions.forEach((func) => {
-    html += `<li>${func.name}</li>`;
+    html += `
+      <div class="form-group">
+        <label for="${func.name}">${func.name}</label>
+    `;
+
+    if (func.params && func.params.args.length > 0) {
+      func.params.args.forEach((arg) => {
+        html += `
+          <input type="text" id="${arg.name}" name="${arg.name}" placeholder="${arg.name}">
+        `;
+      });
+    }
+
+    html += `
+        <button type="submit" class="${func.kind === 'view' || func.kind === 'pure' ? 'read-only' : 'write'}">
+          ${func.kind === 'view' || func.kind === 'pure' ? 'Read' : 'Write'}
+        </button>
+      </div>
+    `;
   });
-  html += '</ul>';
-  html += '</body></html>';
+
+  html += `
+      </form>
+    </body>
+    </html>
+  `;
+
   return html;
 };
 
-// Create an HTTP server
-const http = require('http');
-const server = http.createServer((req, res) => {
-  if (req.url === '/') {
-    const html = generateHtml(abiData);
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(html);
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('404 Not Found');
-  }
+// Set up your server to listen on a port
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
-// Start the server
-const port = 3000;
-server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
+// Serve the HTML string when the root URL is accessed
+app.get('/', (req, res) => {
+  const html = generateHtml(abiData);
+  res.send(html); // Send the HTML string directly
 });
+
