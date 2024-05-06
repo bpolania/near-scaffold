@@ -10,7 +10,7 @@ Open-source framework for developing decentralized applications (dapps) on its b
 
 ## Development Status
 
-Version 0.0.1B
+**Version 0.0.1B**
 
 - Hot Reload local implementation complete
 
