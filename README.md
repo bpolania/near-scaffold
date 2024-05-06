@@ -8,6 +8,12 @@ Open-source framework for developing decentralized applications (dapps) on its b
 * Deploy your contracts and interact with it
 * Collection of common web3 components to quickly build your frontend
 
+## Development Status
+
+Version 0.0.1B
+
+- Hot Reload local implementation complete
+
 ## Getting Started
 
 First, run the development server:
