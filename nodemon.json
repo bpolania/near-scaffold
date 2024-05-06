@@ -1,0 +1,5 @@
+{
+    "watch": ["server.cjs"],
+    "exec": "node server.cjs",
+    "ext": "cjs"
+  }

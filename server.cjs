@@ -1,9 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const http = require('http');
+const { promisify } = require('util');
+const chokidar = require('chokidar');
+const exec = promisify(require('child_process').exec);
+const { setTimeout } = require('timers/promises');
 
 const app = express();
+
+const WebSocket = require('ws');
+
+const wss = new WebSocket.Server({ port: 8080 });
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -50,6 +57,16 @@ const generateHtml = (abi) => {
 
   html += `
       </form>
+      <script>
+        const socket = new WebSocket('ws://localhost:8080');
+
+        socket.addEventListener('message', function (event) {
+          console.log('Message from server ', event.data);
+          if (event.data === 'reload') {
+            location.reload(true);  // Perform a hard reload
+          }
+        });
+      </script>
     </body>
     </html>
   `;
@@ -61,6 +78,70 @@ const generateHtml = (abi) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// File watching setup
+const watcher = chokidar.watch(['src/contract.ts', 'build/near_scaffold.wasm'], {
+  ignored: /^\./,
+  persistent: true
+});
+
+let isProcessing = false;  // Lock flag to indicate if a process is currently running
+
+watcher.on('change', async (path) => {
+  console.log(`File ${path} has been changed`);
+  await setTimeout(2000);
+  if (isProcessing) {
+    console.log("A process is already running, please wait...");
+    return;  // Exit if another process is running
+  }
+    // Set the lock when a process starts
+    isProcessing = true;
+  try {
+    if (path.endsWith('contract.ts')) {
+      console.log("Building the contract...");
+      const { stdout, stderr } = await exec('near-sdk-js build src/contract.ts build/near_scaffold.wasm');
+      console.log(`Build stdout: ${stdout}`);
+      if (stdout.includes("Executing")) {
+        console.log("Contract build was successful!");
+        isProcessing = false;  // Release the lock when the process completes
+      } else {
+        console.log("Failed to build contract.");
+      }
+      // if (stderr) console.error(`Build stderr: ${stderr}`);
+    } else if (path.endsWith('near_scaffold.wasm')) {
+      console.log("Generating ABI...");
+      const { stdout, stderr } = await exec('npx near-sdk-js build --generateABI src/contract.ts');
+      console.log(`ABI stdout: ${stdout}`);
+      if (stdout.includes("success")) {
+        console.log("ABI successfully generated!");
+        isProcessing = false;  // Release the lock when the process completes
+        await setTimeout(2000);
+        if (stdout.includes("success")) {
+          console.log("ABI successfully generated!");
+          isProcessing = false;  // Release the lock when the process completes
+          await setTimeout(2000);
+          wss.on('connection', ws => {
+            ws.on('message', message => {
+              console.log(`Received message => ${message}`)
+            });
+            // When processing is done
+            isProcessing = false;  // Release the lock when the process completes
+            setTimeout(() => {
+              ws.send('reload');
+            }, 2000);
+          });
+        } else {
+          console.log("Failed to build contract.");
+        }
+      } else {
+        console.log("Failed to build contract.");
+      }
+      // if (stderr) console.error(`Process stderr: ${stderr}`);
+    }
+  } catch (error) {
+    console.error(`Error executing command: ${error}`);
+  } 
 });
 
 // Serve the HTML string when the root URL is accessed
