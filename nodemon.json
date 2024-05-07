@@ -1,5 +1,5 @@
 {
-    "watch": ["server.cjs"],
-    "exec": "node server.cjs",
-    "ext": "cjs"
-  }
+  "watch": ["server.cjs","./logs/output.log"],
+  "exec": "node server.cjs",
+  "ext": "cjs, log"
+}

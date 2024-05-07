@@ -6,11 +6,27 @@ const chokidar = require('chokidar');
 const exec = promisify(require('child_process').exec);
 const { setTimeout } = require('timers/promises');
 
+const http = require('http');
+const socketIo = require('socket.io');
+
 const app = express();
 
-const WebSocket = require('ws');
+const server = http.createServer(app);
+const io = socketIo(server);
 
-const wss = new WebSocket.Server({ port: 8080 });
+let shouldReload = true;
+
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  if (shouldReload) {
+    socket.emit('reload');
+    shouldReload = false; // Prevent further reloads
+  }
+  socket.on('disconnect', () => {
+      console.log('Client disconnected');
+  });
+});
+
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -25,6 +41,14 @@ const generateHtml = (abi) => {
     <html>
     <head>
       <title>Contract Functions</title>
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        const socket = io();
+        socket.on('reload', () => {
+          console.log('Reloading the page...');
+          window.location.reload(true);
+        });
+      </script>
       <link rel="stylesheet" href="css/styles.css">
       <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     </head>
@@ -57,16 +81,6 @@ const generateHtml = (abi) => {
 
   html += `
       </form>
-      <script>
-        const socket = new WebSocket('ws://localhost:8080');
-
-        socket.addEventListener('message', function (event) {
-          console.log('Message from server ', event.data);
-          if (event.data === 'reload') {
-            location.reload(true);  // Perform a hard reload
-          }
-        });
-      </script>
     </body>
     </html>
   `;
@@ -74,11 +88,7 @@ const generateHtml = (abi) => {
   return html;
 };
 
-// Set up your server to listen on a port
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
 
 // File watching setup
 const watcher = chokidar.watch(['src/contract.ts', 'build/near_scaffold.wasm'], {
@@ -114,23 +124,13 @@ watcher.on('change', async (path) => {
       const { stdout, stderr } = await exec('npx near-sdk-js build --generateABI src/contract.ts');
       console.log(`ABI stdout: ${stdout}`);
       if (stdout.includes("success")) {
-        console.log("ABI successfully generated!");
         isProcessing = false;  // Release the lock when the process completes
         await setTimeout(2000);
         if (stdout.includes("success")) {
           console.log("ABI successfully generated!");
           isProcessing = false;  // Release the lock when the process completes
-          await setTimeout(2000);
-          wss.on('connection', ws => {
-            ws.on('message', message => {
-              console.log(`Received message => ${message}`)
-            });
-            // When processing is done
-            isProcessing = false;  // Release the lock when the process completes
-            setTimeout(() => {
-              ws.send('reload');
-            }, 2000);
-          });
+          const output = fs.createWriteStream('./logs/output.log');
+          output.write(stdout + '\n');
         } else {
           console.log("Failed to build contract.");
         }
@@ -148,5 +148,11 @@ watcher.on('change', async (path) => {
 app.get('/', (req, res) => {
   const html = generateHtml(abiData);
   res.send(html); // Send the HTML string directly
+});
+
+// Set up your server to listen on a port
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log('Server is running on http://localhost:3000');
 });
 
