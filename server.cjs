@@ -14,9 +14,30 @@ const app = express();
 app.use(cors());
 
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
+});
 
 let shouldReload = true;
+
+function processAbiData() {
+  const abiFilePath = path.join(__dirname, 'build', 'contract-abi.json');
+  const abiData = JSON.parse(fs.readFileSync(abiFilePath, 'utf8'));
+
+  const functionData = abiData.body.functions.map((func) => ({
+    name: func.name,
+    params: func.params ? func.params.args.map((arg) => arg.name) : [],
+    isRead: func.kind === 'view' || func.kind === 'pure',
+    isWrite: func.kind !== 'view' && func.kind !== 'pure',
+  }));
+
+  return functionData;
+}
+
+let functionData = processAbiData(); 
 
 io.on('connection', (socket) => {
   console.log('New client connected');
@@ -29,20 +50,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Read the ABI file
-const abiFilePath = path.join(__dirname, 'server','build', 'contract-abi.json');
-const abiData = JSON.parse(fs.readFileSync(abiFilePath, 'utf8'));
-
-// Process the ABI data and extract function information
-const functionData = abiData.body.functions.map((func) => ({
-  name: func.name,
-  params: func.params ? func.params.args.map((arg) => arg.name) : [],
-  isRead: func.kind === 'view' || func.kind === 'pure',
-  isWrite: func.kind !== 'view' && func.kind !== 'pure',
-}));
-
 // File watching setup
-const watcher = chokidar.watch(['server/src/contract.js', 'server/build/near_scaffold.wasm'], {
+const watcher = chokidar.watch(['server/src/contract.ts', 'build/near_scaffold.wasm'], {
   ignored: /^\./,
   persistent: true
 });
@@ -59,9 +68,9 @@ watcher.on('change', async (path) => {
   // Set the lock when a process starts
   isProcessing = true;
   try {
-    if (path.endsWith('contract.js')) {
+    if (path.endsWith('contract.ts')) {
       console.log("Building the contract...");
-      const { stdout, stderr } = await exec('near-sdk-js build server/src/contract.js server/build/near_scaffold.wasm');
+      const { stdout, stderr } = await exec('near-sdk-js build server/src/contract.ts build/near_scaffold.wasm');
       console.log(`Build stdout: ${stdout}`);
       if (stdout.includes("Executing")) {
         console.log("Contract build was successful!");
@@ -72,7 +81,7 @@ watcher.on('change', async (path) => {
       // if (stderr) console.error(`Build stderr: ${stderr}`);
     } else if (path.endsWith('near_scaffold.wasm')) {
       console.log("Generating ABI...");
-      const { stdout, stderr } = await exec('npx near-sdk-js build --generateABI server/src/contract.js');
+      const { stdout, stderr } = await exec('npx near-sdk-js build --generateABI server/src/contract.ts');
       console.log(`ABI stdout: ${stdout}`);
       if (stdout.includes("success")) {
         isProcessing = false; // Release the lock when the process completes
@@ -80,8 +89,9 @@ watcher.on('change', async (path) => {
         if (stdout.includes("success")) {
           console.log("ABI successfully generated!");
           isProcessing = false; // Release the lock when the process completes
-          const output = fs.createWriteStream('./logs/output.log');
-          output.write(stdout + '\n');
+          functionData = processAbiData();
+          await setTimeout(500);
+          io.emit('reload');
         } else {
           console.log("Failed to build contract.");
         }
@@ -97,6 +107,7 @@ watcher.on('change', async (path) => {
 
 // Serve the JSON response when the root URL is accessed
 app.get('/', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
     functions: functionData,
   });

@@ -139,11 +139,9 @@ extern void validator_total_stake(uint64_t stake_ptr);
 // #############
 // # Alt BN128 #
 // #############
-#ifdef NIGHTLY
 extern void alt_bn128_g1_multiexp(uint64_t value_len, uint64_t value_ptr, uint64_t register_id);
 extern void alt_bn128_g1_sum(uint64_t value_len, uint64_t value_ptr, uint64_t register_id);
 extern uint64_t alt_bn128_pairing_check(uint64_t value_len, uint64_t value_ptr);
-#endif
 
 static uint8_t* JS_Uint8Array_to_C(JSContext *ctx, JSValue array, size_t *len) {
   uint8_t *ptr;
@@ -1056,7 +1054,6 @@ static JSValue near_uint8array_to_utf8_string(JSContext *ctx, JSValueConst this_
   return JS_NewStringLen(ctx, (const char *)data_ptr, data_len);
 }
 
-#ifdef NIGHTLY
 static JSValue near_alt_bn128_g1_multiexp(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
 {
   uint64_t register_id;
@@ -1106,7 +1103,6 @@ static JSValue near_alt_bn128_pairing_check(JSContext *ctx, JSValueConst this_va
   ret = alt_bn128_pairing_check(data_len, (uint64_t)data_ptr);
   return JS_NewBigUint64(ctx, ret);
 }
-#endif
 
 static void js_add_near_host_functions(JSContext* ctx) {
   JSValue global_obj, env;
@@ -1167,13 +1163,9 @@ static void js_add_near_host_functions(JSContext* ctx) {
   JS_SetPropertyStr(ctx, env, "storage_has_key", JS_NewCFunction(ctx, near_storage_has_key, "storage_has_key", 2));
   JS_SetPropertyStr(ctx, env, "validator_stake", JS_NewCFunction(ctx, near_validator_stake, "validator_stake", 2));
   JS_SetPropertyStr(ctx, env, "validator_total_stake", JS_NewCFunction(ctx, near_validator_total_stake, "validator_total_stake", 1));
-  #ifdef NIGHTLY
-  // as of Jun 24, 2022, alt_bn128 is not a nightly protocol feature any more. It's part of protocol version 55. But, testnet
-// is at protocol version 54 and mainnet is at protocol version 53. We'll enable and add alt_bn128 as they in testnet.
   JS_SetPropertyStr(ctx, env, "alt_bn128_g1_multiexp", JS_NewCFunction(ctx, near_alt_bn128_g1_multiexp, "alt_bn128_g1_multiexp", 2));
   JS_SetPropertyStr(ctx, env, "alt_bn128_g1_sum", JS_NewCFunction(ctx, near_alt_bn128_g1_sum, "alt_bn128_g1_sum", 2));
   JS_SetPropertyStr(ctx, env, "alt_bn128_pairing_check", JS_NewCFunction(ctx, near_alt_bn128_pairing_check, "alt_bn128_pairing_check", 1));
-  #endif
 
   JS_SetPropertyStr(ctx, env, "latin1_string_to_uint8array", JS_NewCFunction(ctx, near_latin1_string_to_uint8array, "latin1_string_to_uint8array", 1));
   JS_SetPropertyStr(ctx, env, "utf8_string_to_uint8array", JS_NewCFunction(ctx, near_utf8_string_to_uint8array, "utf8_string_to_uint8array", 1));

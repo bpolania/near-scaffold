@@ -6,7 +6,7 @@ class HelloNear {
   greeting: string = 'Hello';
 
   @view({}) // This method is read-only and can be called for free
-  get_greetingm(): string {
+  get_greetingg(): string {
     return this.greeting;
   }
 

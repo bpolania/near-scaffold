@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ContractFunctions from './ContractFunctions';
+import { io } from 'socket.io-client';
 
 function App() {
   const [functions, setFunctions] = useState([]);
@@ -9,14 +10,28 @@ function App() {
     fetchFunctions();
   }, []);
 
+  useEffect(() => {
+    const socket = io('http://localhost:3001');
+  
+    socket.on('reload', () => {
+      window.location.reload(true);
+    });
+  
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   const fetchFunctions = async () => {
     try {
-      const response = await axios.get('http://localhost:3001');
+      const response = await axios.get('http://localhost:3001?timestamp=' + Date.now());
       setFunctions(response.data.functions);
     } catch (error) {
       console.error('Error fetching functions:', error);
     }
   };
+  
+  
 
   return (
     <div>

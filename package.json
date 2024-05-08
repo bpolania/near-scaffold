@@ -7,12 +7,13 @@
     "server": "nodemon --config nodemon.json",
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "near-sdk-js build server/src/contract.js server/build/near_scaffold.wasm"
+    "build": "near-sdk-js build server/src/contract.ts build/near_scaffold.wasm"
   },
   "dependencies": {
     "@types/lodash-es": "^4.17.12",
     "axios": "^0.24.0",
     "chokidar": "^3.5.2",
+    "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "lodash-es": "^4.17.21",
@@ -28,5 +29,3 @@
     "typescript": "^5.4.5"
   }
 }
-
-
