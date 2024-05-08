@@ -3,8 +3,15 @@ import axios from 'axios';
 import ContractFunctions from './ContractFunctions';
 import { io } from 'socket.io-client';
 
-function App() {
-  const [functions, setFunctions] = useState([]);
+interface Function {
+  name: string;
+  params: string[];
+  isRead: boolean;
+  isWrite: boolean;
+}
+
+const App: React.FC = () => {
+  const [functions, setFunctions] = useState<Function[]>([]);
 
   useEffect(() => {
     fetchFunctions();
@@ -12,11 +19,10 @@ function App() {
 
   useEffect(() => {
     const socket = io('http://localhost:3001');
-  
     socket.on('reload', () => {
-      window.location.reload(true);
+      window.location.reload();
     });
-  
+
     return () => {
       socket.disconnect();
     };
@@ -30,8 +36,6 @@ function App() {
       console.error('Error fetching functions:', error);
     }
   };
-  
-  
 
   return (
     <div>
@@ -39,6 +43,6 @@ function App() {
       <ContractFunctions functions={functions} />
     </div>
   );
-}
+};
 
 export default App;
