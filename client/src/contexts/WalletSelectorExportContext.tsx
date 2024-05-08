@@ -12,19 +12,10 @@ import type { WalletSelector, AccountState } from "@near-wallet-selector/core";
 import { setupExportSelectorModal } from "@near-wallet-selector/account-export";
 import type { WalletSelectorModal } from "@near-wallet-selector/account-export";
 import { setupHereWallet } from "@near-wallet-selector/here-wallet";
-import { setupSender } from "@near-wallet-selector/sender";
-import { setupBitgetWallet } from "@near-wallet-selector/bitget-wallet";
-import { setupMathWallet } from "@near-wallet-selector/math-wallet";
 import { setupNightly } from "@near-wallet-selector/nightly";
 import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
-import { setupWelldoneWallet } from "@near-wallet-selector/welldone-wallet";
-import { setupNearFi } from "@near-wallet-selector/nearfi";
-import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
-import { setupCoin98Wallet } from "@near-wallet-selector/coin98-wallet";
 import { Loading } from "../components/Loading";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
-import { setupLedger } from "@near-wallet-selector/ledger";
-import { setupRamperWallet } from "@near-wallet-selector/ramper-wallet";
 import { setupNearMobileWallet } from "@near-wallet-selector/near-mobile-wallet";
 import { setupMintbaseWallet } from "@near-wallet-selector/mintbase-wallet";
 
@@ -59,27 +50,10 @@ export const ExportAccountSelectorContextProvider: React.FC<{
       debug: true,
       modules: [
         setupMyNearWallet(),
-        setupLedger(),
-        setupSender(),
-        setupBitgetWallet(),
-        setupMathWallet(),
         setupNightly(),
         setupMeteorWallet(),
-        setupWelldoneWallet(),
         setupHereWallet(),
-        setupCoin98Wallet(),
-        setupNearFi(),
-        setupRamperWallet(),
         setupMintbaseWallet({ contractId: "guest-book.testnet" }),
-        setupWalletConnect({
-          projectId: "c4f79cc...",
-          metadata: {
-            name: "NEAR Wallet Selector",
-            description: "Example dApp used by NEAR Wallet Selector",
-            url: "https://github.com/near/wallet-selector",
-            icons: ["https://avatars.githubusercontent.com/u/37784886"],
-          },
-        }),
         setupNearMobileWallet(),
       ],
     });
