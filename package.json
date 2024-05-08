@@ -21,11 +21,12 @@
     "socket.io": "^4.4.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.2.0",
-    "concurrently": "^7.0.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react": "^7.34.1",
-    "globals": "^15.1.0",
+    "near-workspaces": "^3.5.0",
+    "ts-morph": "^21.0.1",
+    "ts-node": "^10.9.2",
+    "tsimp": "^2.0.11",
     "typescript": "^5.4.5"
   }
 }
+
+
