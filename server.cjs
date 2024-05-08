@@ -7,8 +7,11 @@ const exec = promisify(require('child_process').exec);
 const { setTimeout } = require('timers/promises');
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
 
 const app = express();
+
+app.use(cors());
 
 const server = http.createServer(app);
 const io = socketIo(server);
@@ -26,11 +29,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Read the ABI file
-const abiFilePath = path.join(__dirname, 'build', 'contract-abi.json');
+const abiFilePath = path.join(__dirname, 'server','build', 'contract-abi.json');
 const abiData = JSON.parse(fs.readFileSync(abiFilePath, 'utf8'));
 
 // Process the ABI data and extract function information
@@ -42,7 +42,7 @@ const functionData = abiData.body.functions.map((func) => ({
 }));
 
 // File watching setup
-const watcher = chokidar.watch(['src/contract.ts', 'build/near_scaffold.wasm'], {
+const watcher = chokidar.watch(['server/src/contract.js', 'server/build/near_scaffold.wasm'], {
   ignored: /^\./,
   persistent: true
 });
@@ -59,9 +59,9 @@ watcher.on('change', async (path) => {
   // Set the lock when a process starts
   isProcessing = true;
   try {
-    if (path.endsWith('contract.ts')) {
+    if (path.endsWith('contract.js')) {
       console.log("Building the contract...");
-      const { stdout, stderr } = await exec('near-sdk-js build src/contract.ts build/near_scaffold.wasm');
+      const { stdout, stderr } = await exec('near-sdk-js build server/src/contract.js server/build/near_scaffold.wasm');
       console.log(`Build stdout: ${stdout}`);
       if (stdout.includes("Executing")) {
         console.log("Contract build was successful!");
@@ -72,7 +72,7 @@ watcher.on('change', async (path) => {
       // if (stderr) console.error(`Build stderr: ${stderr}`);
     } else if (path.endsWith('near_scaffold.wasm')) {
       console.log("Generating ABI...");
-      const { stdout, stderr } = await exec('npx near-sdk-js build --generateABI src/contract.ts');
+      const { stdout, stderr } = await exec('npx near-sdk-js build --generateABI server/src/contract.js');
       console.log(`ABI stdout: ${stdout}`);
       if (stdout.includes("success")) {
         isProcessing = false; // Release the lock when the process completes
@@ -103,7 +103,7 @@ app.get('/', async (req, res) => {
 });
 
 // Set up your server to listen on a port
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log('Server is running on http://localhost:3000');
+  console.log('Server is running on http://localhost:3001');
 });
