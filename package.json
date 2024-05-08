@@ -1,31 +1,31 @@
 {
   "name": "near-scaffold",
   "version": "1.0.0",
-  "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.cjs",
-    "dev": "nodemon --config nodemon.json",
-    "build": "near-sdk-js build src/contract.ts build/near_scaffold.wasm"
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon --config nodemon.json",
+    "client": "cd client && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "near-sdk-js build server/src/contract.ts build/near_scaffold.wasm"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "chokidar": "^3.6.0",
-    "express": "^4.19.2",
+    "@types/lodash-es": "^4.17.12",
+    "axios": "^0.24.0",
+    "chokidar": "^3.5.2",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "lodash-es": "^4.17.21",
     "near-cli": "^4.0.8",
-    "near-sdk-js": "1.0.0",
-    "socket.io": "^4.7.5"
+    "near-sdk-js": "^2.0.0-0",
+    "socket.io": "^4.4.1"
   },
   "devDependencies": {
     "near-workspaces": "^3.5.0",
-    "nodemon": "^3.1.0",
     "ts-morph": "^21.0.1",
     "ts-node": "^10.9.2",
     "tsimp": "^2.0.11",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.5"
   }
 }
