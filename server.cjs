@@ -113,6 +113,25 @@ app.get('/', async (req, res) => {
   });
 });
 
+app.post('/deploy', async (req, res) => {
+  try {
+    console.log("Starting Contract deployment...");
+    const { stdout, stderr } = await exec('node server/scripts/deploy.cjs');
+    console.log(`Deployment stdout: ${stdout}`);
+    
+    if (stderr) {
+      console.error(`Deployment stderr: ${stderr}`);
+      return res.status(500).json({ error: 'Contract deployment failed' });
+    }
+
+    console.log("Contract deployed successfully!");
+    return res.status(200).json({ message: 'Contract deployed successfully' });
+  } catch (error) {
+    console.error(`Error deploying contract: ${error}`);
+    return res.status(500).json({ error: 'Contract deployment failed' });
+  }
+});
+
 // Set up your server to listen on a port
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
